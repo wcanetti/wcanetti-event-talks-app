@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Talk Event Schedule</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #0056b3;
+        }
+        .search-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .search-container input {
+            padding: 10px;
+            width: 70%;
+            max-width: 400px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .schedule-item {
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            display: flex;
+            align-items: flex-start;
+        }
+        .schedule-item.talk {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+        .schedule-item.lunch {
+            background-color: #ffeeba;
+            border-color: #ffc107;
+            text-align: center;
+            justify-content: center;
+        }
+        .schedule-time {
+            font-weight: bold;
+            color: #0056b3;
+            flex: 0 0 120px; /* Fixed width for time */
+            margin-right: 20px;
+            font-size: 1.1em;
+        }
+        .schedule-details {
+            flex-grow: 1;
+        }
+        .schedule-details h3 {
+            margin-top: 0;
+            color: #004085;
+            font-size: 1.2em;
+        }
+        .schedule-details p {
+            margin: 5px 0;
+        }
+        .schedule-details .speakers {
+            font-style: italic;
+            color: #555;
+        }
+        .schedule-details .categories {
+            font-size: 0.9em;
+            color: #777;
+        }
+        .no-results {
+            text-align: center;
+            color: #888;
+            padding: 30px;
+            font-size: 1.2em;
+        }
+        @media (max-width: 600px) {
+            .schedule-item {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .schedule-time {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tech Talk Event Schedule</h1>
+        <div class="search-container">
+            <input type="text" id="categorySearch" placeholder="Search by category (e.g., Web, Node.js)">
+        </div>
+        <div id="scheduleContainer">
+            <!-- Schedule will be rendered here by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        const talksData = [
+            {
+                id: 'talk1',
+                title: 'Introduction to WebAssembly',
+                speakers: ['Alice Smith'],
+                categories: ['Web', 'Performance', 'WASM'],
+                description: 'A deep dive into WebAssembly and its applications for high-performance web development.',
+                durationMinutes: 60
+            },
+            {
+                id: 'talk2',
+                title: 'Modern CSS Layouts: Flexbox and Grid',
+                speakers: ['Bob Johnson'],
+                categories: ['Frontend', 'CSS', 'Design'],
+                description: 'Mastering Flexbox and CSS Grid for responsive and elegant web interfaces.',
+                durationMinutes: 60
+            },
+            {
+                id: 'talk3',
+                title: 'Understanding Promises and Async/Await in JavaScript',
+                speakers: ['Charlie Brown', 'Diana Prince'],
+                categories: ['JavaScript', 'Asynchronous', 'Programming'],
+                description: 'Demystifying asynchronous JavaScript patterns for cleaner and more efficient code.',
+                durationMinutes: 60
+            },
+            {
+                id: 'talk4',
+                title: 'Building RESTful APIs with Node.js and Express',
+                speakers: ['Eve Adams'],
+                categories: ['Backend', 'Node.js', 'API'],
+                description: 'A practical guide to building robust and scalable RESTful APIs using Node.js and Express.',
+                durationMinutes: 60
+            },
+            {
+                id: 'talk5',
+                title: 'Introduction to Containerization with Docker',
+                speakers: ['Frank White'],
+                categories: ['DevOps', 'Containers', 'Deployment'],
+                durationMinutes: 60
+            },
+            {
+                id: 'talk6',
+                title: 'State Management in React with Hooks',
+                speakers: ['Grace Hopper'],
+                categories: ['Frontend', 'React', 'Hooks'],
+                description: 'Exploring advanced state management techniques in React applications using functional components and hooks.',
+                durationMinutes: 60
+            },
+            {
+                id: 'talk7',
+                title: 'AI in Finance: Opportunities and Challenges',
+                speakers: ['Alan Turing'],
+                categories: ['AI', 'Finance', 'FutureTech'],
+                description: 'Exploring the transformative power of AI in the financial sector, discussing both its potential and the challenges it presents.',
+                durationMinutes: 45
+            },
+            {
+                id: 'talk8',
+                title: 'Blockchain in Real Estate: Disrupting the Market',
+                speakers: ['Satoshi Nakamoto'],
+                categories: ['Blockchain', 'Real Estate', 'FinTech'],
+                description: 'An overview of how blockchain technology is poised to revolutionize the real estate industry, from transactions to property management.',
+                durationMinutes: 45
+            }
+        ];
+
+        function formatTime(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function generateSchedule(allTalks) {
+            const eventStartTime = new Date();
+            eventStartTime.setHours(10, 0, 0, 0); // Event starts at 10:00 AM
+
+            const transitionMinutes = 10;
+            const lunchDurationMinutes = 60; // 1 hour
+
+            let currentTime = new Date(eventStartTime);
+            const scheduledItems = [];
+            let talkCounter = 0;
+
+            for (let i = 0; i < allTalks.length; i++) {
+                const talk = allTalks[i];
+                talkCounter++;
+
+                // Add transition before talk (if not the first talk)
+                if (i > 0) {
+                    currentTime.setMinutes(currentTime.getMinutes() + transitionMinutes);
+                }
+
+                // Check for lunch break before Talk 4 (after Talk 3)
+                if (talkCounter === 4) { // This means we just finished Talk 3, so next is lunch
+                    const lunchStartTime = new Date(currentTime);
+                    currentTime.setMinutes(currentTime.getMinutes() + lunchDurationMinutes);
+                    const lunchEndTime = new Date(currentTime);
+                    scheduledItems.push({
+                        type: 'lunch',
+                        title: 'Lunch Break',
+                        startTime: lunchStartTime,
+                        endTime: lunchEndTime,
+                        durationMinutes: lunchDurationMinutes
+                    });
+                    // Add transition after lunch, before the next talk
+                    currentTime.setMinutes(currentTime.getMinutes() + transitionMinutes);
+                }
+
+                const talkStartTime = new Date(currentTime);
+                currentTime.setMinutes(currentTime.getMinutes() + talk.durationMinutes);
+                const talkEndTime = new Date(currentTime);
+
+                scheduledItems.push({
+                    type: 'talk',
+                    ...talk,
+                    startTime: talkStartTime,
+                    endTime: talkEndTime
+                });
+            }
+            return scheduledItems;
+        }
+
+        function renderSchedule(itemsToRender) {
+            const container = document.getElementById('scheduleContainer');
+            container.innerHTML = ''; // Clear previous schedule
+
+            if (itemsToRender.length === 0) {
+                container.innerHTML = '<p class="no-results">No talks found matching your search criteria.</p>';
+                return;
+            }
+
+            itemsToRender.forEach(item => {
+                if (item.type === 'talk') {
+                    const talkElement = document.createElement('div');
+                    talkElement.classList.add('schedule-item', 'talk');
+                    talkElement.innerHTML = `
+                        <div class="schedule-time">${formatTime(item.startTime)} - ${formatTime(item.endTime)}</div>
+                        <div class="schedule-details">
+                            <h3>${item.title}</h3>
+                            <p class="speakers">Speakers: ${item.speakers.join(', ')}</p>
+                            <p>${item.description}</p>
+                            <p class="categories">Categories: ${item.categories.join(', ')}</p>
+                        </div>
+                    `;
+                    container.appendChild(talkElement);
+                } else if (item.type === 'lunch') {
+                    const lunchElement = document.createElement('div');
+                    lunchElement.classList.add('schedule-item', 'lunch');
+                    lunchElement.innerHTML = `
+                        <div class="schedule-time">${formatTime(item.startTime)} - ${formatTime(item.endTime)}</div>
+                        <div class="schedule-details">
+                            <h3>${item.title}</h3>
+                            <p>Enjoy your meal!</p>
+                        </div>
+                    `;
+                    container.appendChild(lunchElement);
+                }
+            });
+        }
+
+        const allScheduledItems = generateSchedule(talksData);
+        renderSchedule(allScheduledItems);
+
+        // Search functionality
+        const searchInput = document.getElementById('categorySearch');
+        searchInput.addEventListener('keyup', (event) => {
+            const searchTerm = event.target.value.toLowerCase().trim();
+            if (searchTerm === '') {
+                renderSchedule(allScheduledItems); // Show all if search is empty
+                return;
+            }
+
+            const filteredTalks = talksData.filter(talk =>
+                talk.categories.some(category => category.toLowerCase().includes(searchTerm))
+            );
+            // Re-generate schedule with filtered talks. Note: Lunch breaks timings
+            // are fixed relative to the start of the event, so we include them always
+            // but only show filtered talks. This implies if no talks match, only lunch is shown.
+            // A more complex logic could re-calculate the entire day's schedule
+            // based on *only* filtered talks, but for simplicity, we keep the original schedule
+            // structure and just hide/show talks.
+
+            const filteredScheduledItems = generateSchedule(filteredTalks);
+            // We need to re-insert lunch breaks into the filtered schedule at their original times
+            // if they are not naturally included.
+            const finalItemsToRender = [];
+            let talkIdx = 0;
+            allScheduledItems.forEach(item => {
+                if (item.type === 'lunch') {
+                    finalItemsToRender.push(item);
+                } else if (item.type === 'talk') {
+                    // Only add the talk if it's in the filteredTalks list
+                    const originalTalk = item;
+                    if (filteredTalks.some(ft => ft.id === originalTalk.id)) {
+                        finalItemsToRender.push(originalTalk);
+                    }
+                }
+            });
+
+            // Adjust the actual schedule based on the filtered talks to maintain correct timings for filtered view
+            // This is a simplified approach, if all talks are filtered out between two blocks, the schedule might look
+            // like it has longer gaps. For a truly dynamic schedule, the generateSchedule would need to be smarter
+            // about re-ordering based on available talks. For now, we'll just show the filtered talks in their original slots.
+            renderSchedule(finalItemsToRender);
+        });
+
+    </script>
+</body>
+</html>
